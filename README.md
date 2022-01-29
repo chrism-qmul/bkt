@@ -14,7 +14,7 @@ Corbett, and Aleven (2008).
 
 ```
 (require [bkt.core :refer :all])
-(fit-model [[true true] [true true false]] guess-slip-params)
+(fit-model [[true true] [true true false]] guess-slip-bounds)
 ```
 
 Each nested list passed to fit model constitutes a series of ordered
