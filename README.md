@@ -6,6 +6,10 @@ W. L., Baker, R.S. and Rossi, L.M. (2014), which is in turn based on [BKT Brute
 Force](http://www.columbia.edu/~rsb2162/BKT-BruteForce.zip) code from Baker,
 Corbett, and Aleven (2008).
 
+## Install
+
+[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.chrism/bkt.svg)](https://clojars.org/net.clojars.chrism/bkt)
+
 ## Usage
 
 ```
