@@ -1,4 +1,4 @@
-# Bayesian Knowledge Tracing in Clojure!
+# Bayesian Knowledge Tracing
 
 This code is based on [Bayesian Knowledge Tracing Parameter Fitting by Simulated
 Annealing](https://github.com/wlmiller/BKTSimulatedAnnealing) code from Miller,
