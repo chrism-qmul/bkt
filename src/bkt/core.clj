@@ -72,23 +72,27 @@
   (+ learn 
      (* (- 1.0 learn) transit)))
 
-(defn predict-correct 
-  "predict probability of correct for sequence of answers from 1 student"
+(defn predict-known
+  "predict probability of learned/known state for sequence of answers from 1 student"
   [rightwrong {:keys [init] :as params}]
-  (loop [learn init
-         answers rightwrong
-         probabilities []]
+  (loop [answers rightwrong
+         probabilities [init]]
     (if (empty? answers)
       probabilities
-      (let [pcorrect (probability-correct learn params)
+      (let [learn (last probabilities)
             correct? (first answers)
             plearn (if correct?
                      probability-learn-given-correct
                      probability-learn-given-incorrect)
             plearned (probability-learned (plearn learn params) params)]
-        (recur plearned 
-               (rest answers) 
-               (conj probabilities pcorrect))))))
+        (recur (rest answers) 
+               (conj probabilities plearned))))))
+
+(defn predict-correct
+  "predict probability of correct for sequence of answers from 1 student"
+  [rightwrong params]
+  (let [probability-known (predict-known rightwrong params)]
+    (mapv #(probability-correct % params) (drop-last probability-known))))
 
 (defn params-random-step 
   "take a random step with BKT parameters constrained to bounds"

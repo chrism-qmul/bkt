@@ -1,4 +1,4 @@
-(defproject net.clojars.chrism/bkt "0.1.0"
+(defproject net.clojars.chrism/bkt "0.2.0"
   :description "Bayesian Knowledge Tracing"
   :url "https://github.com/chrism-qmul/bkt"
   :scm {:name "git"
