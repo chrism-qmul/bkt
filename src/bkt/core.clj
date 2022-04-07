@@ -1,4 +1,7 @@
-(ns bkt.core)
+(ns bkt.core
+  (:require [clojure.math :as math]))
+
+;(set! *warn-on-reflection* true)
 
 (defn init-params-constant
   "initialize all BKT params to some value"
@@ -31,62 +34,70 @@
 
 (defn- mean
   "Calculate the mean of a collection"
-  [coll]
-  (let [sum (apply + coll)
-        count (count coll)]
-    (if (pos? count)
-      (/ sum count)
+  ^double
+  [^doubles coll]
+  (let [^double sum (apply + coll)
+        c (count coll)]
+    (if (pos? c)
+      (/ sum c)
       0)))
 
 (defn rmse
   "calculate the Root Mean Square Error"
-  [predictions actuals]
-  (let [squared-difference (fn [prediction actual] 
+  ^double
+  [^doubles predictions ^doubles actuals]
+  (let [squared-difference (fn [^double prediction ^double actual] 
                              (let [difference (- actual prediction)]
                                (* difference difference)))]
-    (Math/sqrt (mean (map squared-difference predictions actuals)))))
+    (math/sqrt (mean (map squared-difference predictions actuals)))))
 
 (defn probability-learn-given-correct 
   "the probability of learning given correct observation"
-  [learn {:keys [slip guess transit]}]
+  ^double
+  [^double learn {:keys [^double slip ^double guess ^double transit]}]
   (/ (* learn (- 1.0 slip))
      (+ (* learn (- 1.0 slip)) (* (- 1.0 learn) guess))))
 
-
 (defn probability-learn-given-incorrect 
   "the probability of learning given correct observation"
-  [learn {:keys [slip guess transit]}]
+  [^double learn {:keys [^double slip ^double guess ^double transit]}]
   (/ (* learn slip)
      (+ (* learn slip) (* (- 1.0 learn) (- 1.0 guess)))))
 
 (defn probability-correct 
   "probability of the correctly applying the skill next"
-  [learn {:keys [slip guess]}]
+  ^double
+  [^double learn {:keys [^double slip ^double guess]}]
   (+  
     (* learn (- 1.0 slip))
     (* (- 1.0 learn) guess)))
 
 (defn probability-learned 
   "probability skill is learned given prior obs"
-  [learn {:keys [transit]}]
+  [^double learn {:keys [^double transit]}]
   (+ learn 
      (* (- 1.0 learn) transit)))
 
+(defn predict-next-known 
+  "predict the probability we are in a learned state given answer and previous learned probability"
+  ^double
+  [^double learn correct? params]
+  (let [plearn (if correct?
+                 probability-learn-given-correct
+                 probability-learn-given-incorrect)]
+    (probability-learned (plearn learn params) params)))
+
+
 (defn predict-known
   "predict probability of learned/known state for sequence of answers from 1 student"
+  ^doubles
   [rightwrong {:keys [init] :as params}]
-  (loop [answers rightwrong
-         probabilities [init]]
-    (if (empty? answers)
-      probabilities
-      (let [learn (last probabilities)
-            correct? (first answers)
-            plearn (if correct?
-                     probability-learn-given-correct
-                     probability-learn-given-incorrect)
-            plearned (probability-learned (plearn learn params) params)]
-        (recur (rest answers) 
-               (conj probabilities plearned))))))
+  (persistent!
+    (reduce
+      (fn [acc correct?] 
+        (let [learn (nth acc (dec (count acc)))
+              known (predict-next-known learn correct? params)]
+          (conj! acc known))) (transient [init]) rightwrong)))
 
 (defn predict-correct
   "predict probability of correct for sequence of answers from 1 student"
@@ -112,7 +123,7 @@
 
 (defn fit-model [correct parameter-bounds]
   (let [actuals (->> correct (flatten) (map bool->int))
-        predict (fn [correct params] (->> correct (map #(predict-correct % params)) (flatten)))]
+        predict (fn [correct params] (mapcat #(predict-correct % params) correct))]
     (loop [i 0
            current-params (init-params-random parameter-bounds)
            current-rmse (rmse actuals (predict correct current-params))
